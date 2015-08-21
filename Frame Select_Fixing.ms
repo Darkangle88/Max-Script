@@ -1,0 +1,214 @@
+try (destroydialog FrameSelect) catch()
+
+--Global Variable-------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+global frameListArray = #()
+global InTempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
+global FrameSelect
+
+--function--------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+fn FileOpenReOpenScript = 
+(
+	try 
+	(
+		destroydialog FrameSelect
+		createdialog FrameSelect width: 200 height: 340
+	) 
+	catch
+	(
+		createdialog FrameSelect width: 200 height: 340
+	)
+)
+
+-----------------------------------------------------------------------------------------
+
+fn SaveFrameList =
+(
+	print "aaaaa"
+	if doesfileexist InTempFilePath == true  then
+	(
+		deletefile InTempFilePath
+		createInformationFile = createfile InTempFilePath
+		print frameListArray to:createInformationFile
+		close createInformationFile
+	)
+	else
+	(
+		createInformationFile = createfile InTempFilePath
+		print frameListArray to:createInformationFile
+		close createInformationFile
+	)
+)
+
+-----------------------------------------------------------------------------------------
+
+fn LoadListInTemp = 
+(
+	if doesfileexist InTempFilePath == true  then
+	(
+		openInformationFile = openfile InTempFilePath
+		frameListArray = #()
+		
+		while not eof openInformationFile do
+		(
+			arrayAppend = readline openInformationFile
+			arrayAppend = execute arrayAppend
+			append frameListArray arrayAppend
+			print 
+		)
+		
+		close openInformationFile
+	)
+	else
+	(
+		return messagebox "Don't exist load file"
+	)
+)
+
+-----------------------------------------------------------------------------------------
+
+
+--UI-------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+rollout FrameSelect "Frame Select"
+(
+	
+	--declare--------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------
+	edittext SelectedFrameName "Name " width:160 offset:[10,5]
+	
+	spinner InsertFirstFrame type:#integer scale:1 range:[-10000,100000,0] width:60 align:#left offset:[10,5]
+	spinner InsertLastFrame type:#integer scale:1 range:[-10000,100000,100]width:60 align:#right offset:[-10,-21]
+	
+	label centerofframe "~" offset:[0,-20]
+	
+	button SaveSelectedFrame "Save" offset:[-35,5]width:45
+	button DeleteSelectedFrame "Delete" offset:[35,-26]
+	listbox SelectSavedFrameList "Frame List" offset:[0,5] items:#()
+	groupbox ScriptInformation "Script Information" offset:[0,0] width:175 height:50
+	button SaveInformation "Import" offset:[-35,-35]
+	button LoadInformation "Export" offset:[35,-27]
+	button AboutInformation "About" width:70 height:20 offset: [0,15]
+	
+	--Implementation------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------
+	
+	on FrameSelect open do
+	(
+		LoadListInTemp()
+		SelectSavedFrameList.items = #()
+		
+		for i in 1 to frameListArray.count do
+		(
+			append SelectSavedFrameList.items  frameListArray[i][3]
+		)
+		
+		SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
+		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
+		
+	)
+	
+	on FrameSelect close do
+	(
+		SaveFrameList()
+	)
+	
+	--Insert First Frame in First Spinner 
+	on  InsertFirstFrame entered do
+	(
+		animationrange  = interval InsertFirstFrame.value animationrange.end
+	)	
+
+	--Insert Last Frame in Second Spinner 
+	on  InsertLastFrame entered do
+	(
+		animationrange  = interval animationrange.start InsertLastFrame.value
+	)	
+	
+	--When a click Frame List
+	on SelectSavedFrameList doubleClicked SelectedName do 
+	(
+		for i in 1 to frameListArray.count do
+		(
+			if SelectSavedFrameList.selected == frameListArray[i][3] do
+			(
+				animationrange = interval frameListArray[i][1] frameListArray[i][2]
+			)
+		)
+	)
+	
+	--Save Button
+	on SaveSelectedFrame pressed do
+	(
+		for i in 1 to SelectSavedFrameList.items.count do
+		(
+			if SelectedFrameName.text == SelectSavedFrameList.items[i] then
+			(
+				return messagebox "Duplicated Frame Name"
+			)
+		)
+		if SelectedFrameName.text != "" then
+		(
+									--Frame List? ?? ??
+		SelectSavedFrameList.items = append SelectSavedFrameList.items (SelectedFrameName.text)
+		frameName = SelectedFrameName.text
+		frameName = #(InsertFirstFrame.value, InsertLastFrame.value, frameName)
+		append frameListArray frameName
+		)
+		else
+		(
+			return messagebox "Insert Frame Name"
+		)
+		SaveFrameList()
+	)
+	
+	--Delete Button
+	on DeleteSelectedFrame pressed do
+	(
+		if SelectSavedFrameList.items.count > 0 and SelectSavedFrameList.selection > 0 and frameListArray.count > 0 do
+		(
+		frameListArray = deleteitem frameListArray SelectSavedFrameList.selection
+		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.selection
+		)
+		SaveFrameList()
+	)
+	
+	on SaveInformation pressed do
+	(
+
+	)
+	
+	on LoadInformation pressed do
+	(
+
+	)
+	
+	on AboutInformation pressed do
+	(
+		rollout rollAbout "About"
+		(
+			label ScriptName "Frame Selecter ver.1.0"
+			progressBar horizLine "ProgressBar" height:3 enabled:true value:100 color:(color 10 10 0) align:#center
+			label Contact "Email: jinsuckelf@naver.com"
+			button Okay "Okay" width:50 offset:[0,5]
+			
+			on Okay pressed do
+			(
+				destroydialog rollAbout
+			)
+		)
+		createdialog rollAbout width: 200 height: 80
+	)
+)
+createdialog FrameSelect width: 200 height: 340
+
+--CallBack------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+callbacks.addScript #filePostSave "SaveFrameList()" id:#myCallbackID
+callbacks.addScript #filePostOpen "LoadListInTemp()" id:#myCallbackID
+--callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
