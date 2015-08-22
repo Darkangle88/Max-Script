@@ -5,7 +5,7 @@ try (destroydialog FrameSelect) catch()
 
 global frameListArray = #()
 global InTempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
-global FrameSelect
+global filePath = maxfilepath + getfilenamefile maxfilename + ".txt"
 
 --function--------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
@@ -27,7 +27,6 @@ fn FileOpenReOpenScript =
 
 fn SaveFrameList =
 (
-	print "aaaaa"
 	if doesfileexist InTempFilePath == true  then
 	(
 		deletefile InTempFilePath
@@ -57,7 +56,6 @@ fn LoadListInTemp =
 			arrayAppend = readline openInformationFile
 			arrayAppend = execute arrayAppend
 			append frameListArray arrayAppend
-			print 
 		)
 		
 		close openInformationFile
@@ -90,8 +88,8 @@ rollout FrameSelect "Frame Select"
 	button DeleteSelectedFrame "Delete" offset:[35,-26]
 	listbox SelectSavedFrameList "Frame List" offset:[0,5] items:#()
 	groupbox ScriptInformation "Script Information" offset:[0,0] width:175 height:50
-	button SaveInformation "Import" offset:[-35,-35]
-	button LoadInformation "Export" offset:[35,-27]
+	button ImportInformation "Import" offset:[-35,-35]
+	button ExportInformation "Export" offset:[35,-27]
 	button AboutInformation "About" width:70 height:20 offset: [0,15]
 	
 	--Implementation------------------------------------------------------------------------
@@ -100,16 +98,16 @@ rollout FrameSelect "Frame Select"
 	on FrameSelect open do
 	(
 		LoadListInTemp()
+
 		SelectSavedFrameList.items = #()
 		
 		for i in 1 to frameListArray.count do
 		(
-			append SelectSavedFrameList.items  frameListArray[i][3]
+			append SelectSavedFrameList.items frameListArray[i][3]
 		)
 		
 		SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
 		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
-		
 	)
 	
 	on FrameSelect close do
@@ -151,18 +149,19 @@ rollout FrameSelect "Frame Select"
 				return messagebox "Duplicated Frame Name"
 			)
 		)
+		
 		if SelectedFrameName.text != "" then
 		(
-									--Frame List? ?? ??
-		SelectSavedFrameList.items = append SelectSavedFrameList.items (SelectedFrameName.text)
-		frameName = SelectedFrameName.text
-		frameName = #(InsertFirstFrame.value, InsertLastFrame.value, frameName)
-		append frameListArray frameName
+			SelectSavedFrameList.items = append SelectSavedFrameList.items (SelectedFrameName.text)
+			frameName = SelectedFrameName.text
+			frameName = #(InsertFirstFrame.value, InsertLastFrame.value, frameName)
+			append frameListArray frameName
 		)
 		else
 		(
 			return messagebox "Insert Frame Name"
 		)
+		
 		SaveFrameList()
 	)
 	
@@ -171,18 +170,19 @@ rollout FrameSelect "Frame Select"
 	(
 		if SelectSavedFrameList.items.count > 0 and SelectSavedFrameList.selection > 0 and frameListArray.count > 0 do
 		(
-		frameListArray = deleteitem frameListArray SelectSavedFrameList.selection
-		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.selection
+			frameListArray = deleteitem frameListArray SelectSavedFrameList.selection
+			SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.selection
 		)
+		
 		SaveFrameList()
 	)
 	
-	on SaveInformation pressed do
+	on ImportInformation pressed do
 	(
 
 	)
 	
-	on LoadInformation pressed do
+	on ExportInformation pressed do
 	(
 
 	)
@@ -210,5 +210,6 @@ createdialog FrameSelect width: 200 height: 340
 -----------------------------------------------------------------------------------------
 
 callbacks.addScript #filePostSave "SaveFrameList()" id:#myCallbackID
-callbacks.addScript #filePostOpen "LoadListInTemp()" id:#myCallbackID
+--callbacks.addScript #filePostOpen "LoadListInTemp()" id:#myCallbackID
 --callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
+--callbacks.removescripts id:#myCallbackID
