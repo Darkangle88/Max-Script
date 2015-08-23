@@ -25,18 +25,18 @@ fn FileOpenReOpenScript =
 
 -----------------------------------------------------------------------------------------
 
-fn SaveFrameList =
+fn SaveFrameList FilePath=
 (
-	if doesfileexist InTempFilePath == true  then
+	if doesfileexist FilePath == true  then
 	(
-		deletefile InTempFilePath
-		createInformationFile = createfile InTempFilePath
+		deletefile FilePath
+		createInformationFile = createfile FilePath
 		print frameListArray to:createInformationFile
 		close createInformationFile
 	)
 	else
 	(
-		createInformationFile = createfile InTempFilePath
+		createInformationFile = createfile FilePath
 		print frameListArray to:createInformationFile
 		close createInformationFile
 	)
@@ -44,11 +44,11 @@ fn SaveFrameList =
 
 -----------------------------------------------------------------------------------------
 
-fn LoadListInTemp = 
+fn LoadListInTemp FilePath= 
 (
-	if doesfileexist InTempFilePath == true  then
+	if doesfileexist FilePath == true  then
 	(
-		openInformationFile = openfile InTempFilePath
+		openInformationFile = openfile FilePath
 		frameListArray = #()
 		
 		while not eof openInformationFile do
@@ -97,7 +97,7 @@ rollout FrameSelect "Frame Select"
 	
 	on FrameSelect open do
 	(
-		LoadListInTemp()
+		LoadListInTemp InTempFilePath
 
 		SelectSavedFrameList.items = #()
 		
@@ -110,10 +110,14 @@ rollout FrameSelect "Frame Select"
 		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
 	)
 	
+	-----------------------------------------------------------------------------------------
+	
 	on FrameSelect close do
 	(
-		SaveFrameList()
+		SaveFrameList InTempFilePath
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	--Insert First Frame in First Spinner 
 	on  InsertFirstFrame entered do
@@ -121,11 +125,15 @@ rollout FrameSelect "Frame Select"
 		animationrange  = interval InsertFirstFrame.value animationrange.end
 	)	
 
+	-----------------------------------------------------------------------------------------
+	
 	--Insert Last Frame in Second Spinner 
 	on  InsertLastFrame entered do
 	(
 		animationrange  = interval animationrange.start InsertLastFrame.value
 	)	
+	
+	-----------------------------------------------------------------------------------------
 	
 	--When a click Frame List
 	on SelectSavedFrameList doubleClicked SelectedName do 
@@ -138,6 +146,8 @@ rollout FrameSelect "Frame Select"
 			)
 		)
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	--Save Button
 	on SaveSelectedFrame pressed do
@@ -162,8 +172,10 @@ rollout FrameSelect "Frame Select"
 			return messagebox "Insert Frame Name"
 		)
 		
-		SaveFrameList()
+		SaveFrameList InTempFilePath
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	--Delete Button
 	on DeleteSelectedFrame pressed do
@@ -174,18 +186,37 @@ rollout FrameSelect "Frame Select"
 			SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.selection
 		)
 		
-		SaveFrameList()
+		SaveFrameList InTempFilePath
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	on ImportInformation pressed do
 	(
-
+		local importFilePath = getOpenFileName caption:"Import List File"  types:"Text(*.txt)|*.txt" filename: (maxfilepath)
+		
+		LoadListInTemp importFilePath
+		
+		SelectSavedFrameList.items = #()
+		
+		for i in 1 to frameListArray.count do
+		(
+			append SelectSavedFrameList.items frameListArray[i][3]
+		)
+		
+		SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
+		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	on ExportInformation pressed do
 	(
-
+		local saveFilePath = getSaveFileName caption:"Export List File" filename:(filePath)  types:"Text(*.txt)|*.txt"
+		SaveFrameList saveFilePath
 	)
+	
+	-----------------------------------------------------------------------------------------
 	
 	on AboutInformation pressed do
 	(
