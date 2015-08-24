@@ -25,7 +25,7 @@ fn FileOpenReOpenScript =
 
 -----------------------------------------------------------------------------------------
 
-fn SaveFrameList FilePath=
+fn SaveFrameList =
 (
 	local TempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
 	
@@ -46,7 +46,7 @@ fn SaveFrameList FilePath=
 
 -----------------------------------------------------------------------------------------
 
-fn LoadListInTemp FilePath= 
+fn LoadListInTemp = 
 (
 	local TempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
 	
@@ -102,7 +102,7 @@ rollout FrameSelect "Frame Select"
 	(
 		SelectSavedFrameList.items = #()
 		
-		LoadListInTemp InTempFilePath
+		LoadListInTemp()
 		
 		for i in 1 to frameListArray.count do
 		(
@@ -162,13 +162,14 @@ rollout FrameSelect "Frame Select"
 			frameName = SelectedFrameName.text
 			frameName = #(InsertFirstFrame.value, InsertLastFrame.value, frameName)
 			append frameListArray frameName
+			
+			SaveFrameList()
 		)
 		else
 		(
 			return messagebox "Insert Frame Name"
 		)
 		
-		SaveFrameList InTempFilePath
 	)
 	
 	-----------------------------------------------------------------------------------------
@@ -180,9 +181,9 @@ rollout FrameSelect "Frame Select"
 		(
 			frameListArray = deleteitem frameListArray SelectSavedFrameList.selection
 			SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.selection
+			
+			SaveFrameList()
 		)
-		
-		SaveFrameList InTempFilePath
 	)
 	
 	-----------------------------------------------------------------------------------------
@@ -221,6 +222,8 @@ rollout FrameSelect "Frame Select"
 			
 			SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
 			SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
+				
+			SaveFrameList()
 		)
 	)
 	
@@ -234,7 +237,7 @@ rollout FrameSelect "Frame Select"
 		(
 			if doesfileexist saveFilePath == true  then
 			(
-				deletefile TempFilePath
+				deletefile saveFilePath
 				createInformationFile = createfile saveFilePath
 				print frameListArray to:createInformationFile
 				close createInformationFile
@@ -254,9 +257,10 @@ rollout FrameSelect "Frame Select"
 	(
 		rollout rollAbout "About"
 		(
-			label ScriptName "Frame Selecter ver.1.0"
+			label ScriptName "Frame Selecter ver.1.1"
 			progressBar horizLine "ProgressBar" height:3 enabled:true value:100 color:(color 10 10 0) align:#center
 			label Contact "Email: jinsuckelf@naver.com"
+			label Name "Park Jin Seok"
 			button Okay "Okay" width:50 offset:[0,5]
 			
 			on Okay pressed do
@@ -264,7 +268,7 @@ rollout FrameSelect "Frame Select"
 				destroydialog rollAbout
 			)
 		)
-		createdialog rollAbout width: 200 height: 80
+		createdialog rollAbout width: 200 height: 100
 	)
 )
 createdialog FrameSelect width: 200 height: 340
@@ -272,6 +276,5 @@ createdialog FrameSelect width: 200 height: 340
 --CallBack------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 
-callbacks.addScript #filePostSave "SaveFrameList InTempFilePath" id:#myCallbackID
+callbacks.addScript #filePostSave "SaveFrameList()" id:#myCallbackID
 callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
---callbacks.removescripts id:#myCallbackID
