@@ -27,16 +27,18 @@ fn FileOpenReOpenScript =
 
 fn SaveFrameList FilePath=
 (
-	if doesfileexist FilePath == true  then
+	local TempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
+	
+	if doesfileexist TempFilePath == true  then
 	(
-		deletefile FilePath
-		createInformationFile = createfile FilePath
+		deletefile TempFilePath
+		createInformationFile = createfile TempFilePath
 		print frameListArray to:createInformationFile
 		close createInformationFile
 	)
 	else
 	(
-		createInformationFile = createfile FilePath
+		createInformationFile = createfile TempFilePath
 		print frameListArray to:createInformationFile
 		close createInformationFile
 	)
@@ -46,9 +48,11 @@ fn SaveFrameList FilePath=
 
 fn LoadListInTemp FilePath= 
 (
-	if doesfileexist FilePath == true  then
+	local TempFilePath = getdir #temp + "\\" + getfilenamefile maxfilename + ".txt"
+	
+	if doesfileexist TempFilePath == true  then
 	(
-		openInformationFile = openfile FilePath
+		openInformationFile = openfile TempFilePath
 		frameListArray = #()
 		
 		while not eof openInformationFile do
@@ -74,7 +78,6 @@ fn LoadListInTemp FilePath=
 
 rollout FrameSelect "Frame Select"
 (
-	
 	--declare--------------------------------------------------------------------------------
 	-----------------------------------------------------------------------------------------
 	edittext SelectedFrameName "Name " width:160 offset:[10,5]
@@ -97,9 +100,9 @@ rollout FrameSelect "Frame Select"
 	
 	on FrameSelect open do
 	(
-		LoadListInTemp InTempFilePath
-
 		SelectSavedFrameList.items = #()
+		
+		LoadListInTemp InTempFilePath
 		
 		for i in 1 to frameListArray.count do
 		(
@@ -108,13 +111,6 @@ rollout FrameSelect "Frame Select"
 		
 		SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
 		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
-	)
-	
-	-----------------------------------------------------------------------------------------
-	
-	on FrameSelect close do
-	(
-		SaveFrameList InTempFilePath
 	)
 	
 	-----------------------------------------------------------------------------------------
@@ -195,17 +191,37 @@ rollout FrameSelect "Frame Select"
 	(
 		local importFilePath = getOpenFileName caption:"Import List File"  types:"Text(*.txt)|*.txt" filename: (maxfilepath)
 		
-		LoadListInTemp importFilePath
-		
-		SelectSavedFrameList.items = #()
-		
-		for i in 1 to frameListArray.count do
+		if importFilePath != undefined do
 		(
-			append SelectSavedFrameList.items frameListArray[i][3]
+			if doesfileexist importFilePath == true  then
+			(
+				openInformationFile = openfile importFilePath
+				frameListArray = #()
+				
+				while not eof openInformationFile do
+				(
+					arrayAppend = readline openInformationFile
+					arrayAppend = execute arrayAppend
+					append frameListArray arrayAppend
+				)
+				
+				close openInformationFile
+			)
+			else
+			(
+				return messagebox "Don't exist load file"
+			)
+			
+			SelectSavedFrameList.items = #()
+			
+			for i in 1 to frameListArray.count do
+			(
+				append SelectSavedFrameList.items frameListArray[i][3]
+			)
+			
+			SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
+			SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
 		)
-		
-		SelectSavedFrameList.items = append SelectSavedFrameList.items ("@For Refresh")
-		SelectSavedFrameList.items = deleteitem SelectSavedFrameList.items SelectSavedFrameList.items.count
 	)
 	
 	-----------------------------------------------------------------------------------------
@@ -213,7 +229,23 @@ rollout FrameSelect "Frame Select"
 	on ExportInformation pressed do
 	(
 		local saveFilePath = getSaveFileName caption:"Export List File" filename:(filePath)  types:"Text(*.txt)|*.txt"
-		SaveFrameList saveFilePath
+		
+		if saveFilePath != undefined do
+		(
+			if doesfileexist saveFilePath == true  then
+			(
+				deletefile TempFilePath
+				createInformationFile = createfile saveFilePath
+				print frameListArray to:createInformationFile
+				close createInformationFile
+			)
+			else
+			(
+				createInformationFile = createfile saveFilePath
+				print frameListArray to:createInformationFile
+				close createInformationFile
+			)
+		)
 	)
 	
 	-----------------------------------------------------------------------------------------
@@ -240,7 +272,6 @@ createdialog FrameSelect width: 200 height: 340
 --CallBack------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 
-callbacks.addScript #filePostSave "SaveFrameList()" id:#myCallbackID
---callbacks.addScript #filePostOpen "LoadListInTemp()" id:#myCallbackID
---callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
+callbacks.addScript #filePostSave "SaveFrameList InTempFilePath" id:#myCallbackID
+callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
 --callbacks.removescripts id:#myCallbackID
