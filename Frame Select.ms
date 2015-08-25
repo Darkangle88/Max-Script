@@ -115,6 +115,13 @@ rollout FrameSelect "Frame Select"
 	
 	-----------------------------------------------------------------------------------------
 	
+	on FrameSelect close do
+	(
+		callbacks.removeScripts id:#myCallbackID
+	)
+	
+	-----------------------------------------------------------------------------------------
+	
 	--Insert First Frame in First Spinner 
 	on  InsertFirstFrame entered do
 	(
@@ -277,4 +284,4 @@ createdialog FrameSelect width: 200 height: 340
 -----------------------------------------------------------------------------------------
 
 callbacks.addScript #filePostSave "SaveFrameList()" id:#myCallbackID
-callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallback
+callbacks.addScript #filePostOpen "FileOpenReOpenScript()" id:#myCallbackID

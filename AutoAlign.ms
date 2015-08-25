@@ -1,4 +1,10 @@
+--Global Variable---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+
 global SnapShotLayer = LayerManager.getLayerFromName "@SnapShot"
+
+--Function---------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
 
 fn SelectedObj = 
 	(
@@ -15,6 +21,9 @@ fn SelectedObj =
 		)
 		catch()
 	)
+
+--Declare----------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
 	
 rollout AutoAlign "AutoAlign"
 (
@@ -50,6 +59,15 @@ rollout AutoAlign "AutoAlign"
 
 	button btnAbout "About" offset:[0,17]width:100
 
+--Implementation--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+
+	on AutoAlign close do
+	(
+		 callbacks.removeScripts id:#myCallbackID
+	)
+	
+	--------------------------------------------------------------------------------------
 	
 	on btnSnapShot pressed do
 	(
@@ -82,6 +100,8 @@ rollout AutoAlign "AutoAlign"
 		)
 	)
 	
+	--------------------------------------------------------------------------------------	
+	
 	on btnAlignObject pressed do
 	(
 		if classof $ == Biped_Object then
@@ -95,11 +115,15 @@ rollout AutoAlign "AutoAlign"
 		)
 		AliObject.text = $.name 
 	)
+
+	--------------------------------------------------------------------------------------
 	
 	on btnTarObject pressed do
 	(
 		TarObject.text = $.name 
 	)
+
+	--------------------------------------------------------------------------------------
 	
 	on btnAlign pressed do
 	(
@@ -170,6 +194,8 @@ rollout AutoAlign "AutoAlign"
 		)
 		slidertime = PreFrame
 	)
+
+	--------------------------------------------------------------------------------------
 	
 	on btnHideAndUnhide pressed do
 	 (
@@ -182,24 +208,28 @@ rollout AutoAlign "AutoAlign"
 			 SnapShotLayer.ishidden = true
 		 )
 	 )
+	
+	--------------------------------------------------------------------------------------
 	 
-	 on btnFreezeAndUnfreeze pressed do
-	 (
-		 if SnapShotLayer.isfrozen == true then
-		 (
-			 SnapShotLayer.isfrozen =false
-		 )
-		 else
-		 (
-			 SnapShotLayer.isfrozen = true
-		 )
-	 )
+	on btnFreezeAndUnfreeze pressed do
+	(
+		if SnapShotLayer.isfrozen == true then
+		(
+			SnapShotLayer.isfrozen =false
+		)
+		else
+		(
+			SnapShotLayer.isfrozen = true
+		)
+	)
 	 
+	--------------------------------------------------------------------------------------
+	
 	on btnSeeAllSnapShot pressed do
-	 (
-		 macros.run "Layers" "LayerManager"
-		 clearSelection()
-		 try
+	(
+		macros.run "Layers" "LayerManager"
+		clearSelection()
+		try
 		(
 			SnapShotLayer.select true
 		)
@@ -207,7 +237,9 @@ rollout AutoAlign "AutoAlign"
 		(
 			 messagebox "Don't exist Snapshot"
 		)
-	 )
+	)
+	 
+	--------------------------------------------------------------------------------------
 	 
 	on btnDeleteAllSnapShot pressed do
 	 (
@@ -244,6 +276,7 @@ rollout AutoAlign "AutoAlign"
 		createdialog rollDeleteAllSnapShot width: 150 height: 75
 	 )
 	 
+	--------------------------------------------------------------------------------------
 	
 	on  btnAbout pressed do
 	(
@@ -266,5 +299,7 @@ rollout AutoAlign "AutoAlign"
 )
 createdialog AutoAlign width: 280 height: 460
 
+--Callbacks--------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+
 callbacks.addScript #selectionSetChanged "SelectedObj()" id:#myCallbackID
-callbacks.removeScripts #preSystemShutdown id:#myCallbackID
