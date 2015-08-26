@@ -92,15 +92,12 @@ fn ShadowOpacity LayerArray OpValue =
 		actionMan.executeAction 0 "50022"  -- Time: Forward Time One Unit
 	)
 	
-	print LayerArray
 	if (set animate on == false) then
 		(
 			for i in LayerArray do
 			(
-				print "bbbbbbbbbbbbbbbb"
 				i.visibility = bezier_float()
 				i.visibility.controller.value = OpValue
-				print i.visibility.controller.value
 			)
 		)
 		else
@@ -108,13 +105,29 @@ fn ShadowOpacity LayerArray OpValue =
 			actionMan.executeAction 0 "50024" --set animate on/off
 			for i in LayerArray do
 			(
-				print "aaaaaaaaaaa"
-				print LayerArray
 				i.visibility = bezier_float()
 				i.visibility.controller.value = OpValue
 			)
 			actionMan.executeAction 0 "50024" --set animate on/off
 		)
+)
+
+----------------------------------------------------------------------------------------------
+
+fn selectSkinnedObject = 
+(
+	modifierObjects = #()
+	
+	select $* --Select All Object
+
+	for i in selection where i.modifiers[1] != undefined do
+	(
+		for j in 1 to  i.modifiers.count where i.modifiers[j].name == "Skin" do
+		(
+			append modifierObjects i
+		)
+	)
+	clearselection()
 )
 
 ----------------------------------------------------------------------------------------------
@@ -191,8 +204,10 @@ fn selectAllChildren TopNode =
 
 ----------------------------------------------------------------------------------------------
 
-fn getShadowObject LayerName ArrayName= 
+fn getShadowObject LayerName LayerArray= 
 (
+	clearselection()
+	
 	if (LayerManager.getLayerFromName LayerName) != undefined do
 	(
 		(LayerManager.getLayerFromName LayerName).select on
@@ -201,7 +216,7 @@ fn getShadowObject LayerName ArrayName=
 		(
 			if (iskindof i Editable_mesh == true) or (iskindof i Editable_Poly == true) or (iskindof i PolyMeshObject == true) do
 			(
-				append ArrayName i
+				append LayerArray i
 			)
 		)
 	)
@@ -225,24 +240,6 @@ fn SelectedObj =
 		)
 	)
 	catch()
-)
-
-----------------------------------------------------------------------------------------------
-
-fn selectSkinnedObject = 
-(
-	modifierObjects = #()
-	
-	select $* --Select All Object
-
-	for i in selection where i.modifiers[1] != undefined do
-	(
-		for j in 1 to  i.modifiers.count where i.modifiers[j].name == "Skin" do
-		(
-			append modifierObjects i
-		)
-	)
-	clearselection()
 )
 
 ----------------------------------------------------------------------------------------------
@@ -323,7 +320,7 @@ fn CreateShadow LayerArray LayerName =
 			LayerArray = #()
 			
 			getShadowObject LayerName LayerArray
-			
+
 			unhide LayerArray
 			
 			for i in LayerArray do
@@ -459,6 +456,9 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	on btnBiped_Layer0CreateShadow pressed do
 	(
 		CreateShadow Layer0Mesh "@Biped_Layer0_Shadow"
+		Layer0Mesh = #()
+		getShadowObject "@Biped_Layer0_Shadow" Layer0Mesh 
+		print Layer0mesh
 	)
 
 	----------------------------------------------------------------------------------------------
@@ -496,6 +496,9 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 		(
 			CreateShadow Layer1Mesh "@Biped_Layer1_Shadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer1_Shadow"
+			Layer1Mesh = #()
+			getShadowObject "@Biped_Layer1_Shadow" Layer1Mesh 
+			print Layer1mesh
 		)
 		else
 		(
@@ -540,6 +543,9 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 		(
 			CreateShadow Layer2Mesh "@Biped_Layer2_Shadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer2_Shadow"
+			Layer2Mesh = #()
+			getShadowObject "@Biped_Layer2_Shadow" Layer2Mesh 
+			print Layer2mesh
 		)
 		else
 		(
@@ -584,6 +590,9 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 		(
 			CreateShadow Layer3Mesh "@Biped_Layer3_vzShadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer3_Shadow"
+			Layer3Mesh = #()
+			getShadowObject "@Biped_Layer3_Shadow" Layer3Mesh 
+			print Layer3mesh
 		)
 		else
 		(
