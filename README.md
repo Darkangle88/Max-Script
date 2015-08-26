@@ -1,4 +1,4 @@
 # Max-Script
-Study MaxScript
+Hello~
 
 My Max-Script Store Space
