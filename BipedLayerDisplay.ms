@@ -21,6 +21,7 @@ global SelectedBiped
 fn SelectShadowBipedObjectInLayer LayerName =
 (
 	local SelectedBipedObject
+	
 	clearselection()
 	
 	if LayerManager.getLayerFromName LayerName !=Undefined then
@@ -32,12 +33,12 @@ fn SelectShadowBipedObjectInLayer LayerName =
 		return()
 	)
 	
-	for i in selection do
+	for First in selection do
 		(
-			if (iskindof i Biped_Object == true) do
+			if (iskindof First Biped_Object) do
 			(
-				Select i
-				SelectedBipedObject = i
+				Select First
+				SelectedBipedObject = First
 				exit() 
 			)
 		)
@@ -66,17 +67,17 @@ fn SelectShadowBipedObjectInLayer LayerName =
 
 fn HideAndUnhideLayer LayerArray = 
 (
-	for i in LayerArray do 
+	for First in LayerArray do 
 	(
 		try
 		(
-			if i.ishidden == false then
+			if First.ishidden == false then
 			(
-				hide i
+				hide First
 			)
 			else
 			(
-				unhide i
+				unhide First
 			)
 		)
 		catch()
@@ -93,23 +94,23 @@ fn ShadowOpacity LayerArray OpValue =
 	)
 	
 	if (set animate on == false) then
+	(
+		for First in LayerArray do
 		(
-			for i in LayerArray do
-			(
-				i.visibility = bezier_float()
-				i.visibility.controller.value = OpValue
-			)
+			First.visibility = bezier_float()
+			First.visibility.controller.value = OpValue
 		)
-		else
+	)
+	else
+	(
+		actionMan.executeAction 0 "50024" --set animate on/off
+		for First in LayerArray do
 		(
-			actionMan.executeAction 0 "50024" --set animate on/off
-			for i in LayerArray do
-			(
-				i.visibility = bezier_float()
-				i.visibility.controller.value = OpValue
-			)
-			actionMan.executeAction 0 "50024" --set animate on/off
+			First.visibility = bezier_float()
+			First.visibility.controller.value = OpValue
 		)
+		actionMan.executeAction 0 "50024" --set animate on/off
+	)
 )
 
 ----------------------------------------------------------------------------------------------
@@ -189,11 +190,11 @@ fn selectAllChildren TopNode =
 	(
 		ObjectChild = #()
 		
-		for i in SelectedObjectChild do 
+		for First in SelectedObjectChild do 
 		(
-			if i.children[1] != undefined do
+			if First.children[1] != undefined do
 			(			
-				join ObjectChild i.children
+				join ObjectChild First.children
 			)
 		)
 		join SelectedObject ObjectChild
@@ -214,11 +215,11 @@ fn getShadowObject LayerName LayerArray=
 	(
 		(LayerManager.getLayerFromName LayerName).select on
 	
-		for i in selection do
+		for First in selection do
 		(
-			if (iskindof i Editable_mesh == true) or (iskindof i Editable_Poly == true) or (iskindof i PolyMeshObject == true) do
+			if (iskindof First Editable_mesh) or (iskindof First Editable_Poly) or (iskindof First PolyMeshObject) do
 			(
-				append LayerArray i
+				append LayerArray First
 			)
 		)
 	)
@@ -255,7 +256,7 @@ fn getBipedInmodifierObjects =
 			select First
 			setCommandPanelTaskMode #modify
 			
-			if (iskindof (execute ("$'"+(skinOps.GetBoneName $.modifiers[#Skin] Second 1)+ "'")) Biped_Object) == true do
+			if (iskindof (execute ("$'"+(skinOps.GetBoneName $.modifiers[#Skin] Second 1)+ "'")) Biped_Object) do
 			(
 				--Set SelectedBiped
 				SelectedBiped = (execute ("$'"+(skinOps.GetBoneName $.modifiers[#Skin] Second 1)+ "'"))
@@ -291,11 +292,11 @@ fn CreateShadow LayerArray LayerName =
 			(
 				ObjectChild = #()
 				
-				for i in SelectedObjectChild do 
+				for First in SelectedObjectChild do 
 				(
-					if i.children[1] != undefined do
+					if First.children[1] != undefined do
 					(			
-						join ObjectChild i.children
+						join ObjectChild First.children
 					)
 				)
 				
@@ -325,10 +326,10 @@ fn CreateShadow LayerArray LayerName =
 
 			unhide LayerArray
 			
-			for i in LayerArray do
+			for First in LayerArray do
 			(
-				i.visibility = bezier_float()
-				i.visibility.controller.value = 1.0
+				First.visibility = bezier_float()
+				First.visibility.controller.value = 1.0
 			)
 		)
 		else
@@ -411,6 +412,8 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	
 	on BipedLayerShadow open do
 	(
+		callbacks.addScript #selectionSetChanged "SelectedObj()" id:#myCallbackID
+		
 		if viewport.GetTransparencyLevel() == 1 do
 		(
 			viewport.SetTransparencyLevel 2
@@ -460,7 +463,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 		CreateShadow Layer0Mesh "@Biped_Layer0_Shadow"
 		Layer0Mesh = #()
 		getShadowObject "@Biped_Layer0_Shadow" Layer0Mesh 
-		print Layer0mesh
 	)
 
 	----------------------------------------------------------------------------------------------
@@ -486,7 +488,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	(
 		if (biped.numLayers SelectedBiped.controller > 0) and (LayerManager.getLayerFromName "@Biped_Layer1_Shadow") != undefined do
 		(
-			print "babasdadawdawd"
 			ShadowOpacity Layer1Mesh Num
 		)
 	)
@@ -500,7 +501,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer1_Shadow"
 			Layer1Mesh = #()
 			getShadowObject "@Biped_Layer1_Shadow" Layer1Mesh 
-			print Layer1mesh
 		)
 		else
 		(
@@ -547,7 +547,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer2_Shadow"
 			Layer2Mesh = #()
 			getShadowObject "@Biped_Layer2_Shadow" Layer2Mesh 
-			print Layer2mesh
 		)
 		else
 		(
@@ -594,7 +593,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 			SelectShadowBipedObjectInLayer "@Biped_Layer3_Shadow"
 			Layer3Mesh = #()
 			getShadowObject "@Biped_Layer3_Shadow" Layer3Mesh 
-			print Layer3mesh
 		)
 		else
 		(
@@ -643,9 +641,7 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 		)
 		catch
-		(
-			
-		)
+		()
 	)
 
 	----------------------------------------------------------------------------------------------
@@ -658,15 +654,16 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 		)
 		
 		if  biped.getCurrentLayer SelectedBiped.controller == 0 do
-			(
-				btnPreLayer.enabled = false
-				btnDeleteLayer.enabled = false
-			)
+		(
+			btnPreLayer.enabled = false
+			btnDeleteLayer.enabled = false
+		)
 			
 		if biped.getCurrentLayer SelectedBiped.controller == biped.numLayers SelectedBiped.controller do
-			(
-				btnNextLayer.enabled = false
-			)
+		(
+			btnNextLayer.enabled = false
+		)
+		
 		etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 	)
 	
@@ -676,7 +673,6 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	(
 		if (LayerManager.getLayerFromName "@Biped_Layer0_Shadow") != undefined  do
 		(
-			print "aaaaaaaa"
 			DeleteShadow "@Biped_Layer0_Shadow" Layer0Mesh
 		)
 		
@@ -709,11 +705,13 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 				(
 					btnPreLayer.enabled = true
 				)
+				
 				if biped.getCurrentLayer SelectedBiped.controller == biped.numLayers SelectedBiped.controller do
 				(
 					btnNextLayer.enabled = false
 				)
 			)
+			
 			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 		)
 		catch
@@ -784,5 +782,3 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	)
 )
 createdialog BipedLayerShadow width: 235 height: 540
-
-callbacks.addScript #selectionSetChanged "SelectedObj()" id:#myCallbackID
