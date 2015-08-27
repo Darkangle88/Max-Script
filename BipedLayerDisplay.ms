@@ -118,15 +118,17 @@ fn selectSkinnedObject =
 (
 	modifierObjects = #()
 	
-	select $* --Select All Object
-
-	for i in selection where i.modifiers[1] != undefined do
+	for First in objects where First.modifiers[1] != undefined do
 	(
-		for j in 1 to  i.modifiers.count where i.modifiers[j].name == "Skin" do
+		for Second in 1 to  First.modifiers.count where First.modifiers[Second].name == "Skin" do
 		(
-			append modifierObjects i
+			if First.layer.name != "@Biped_Layer0_Shadow" and First.layer.name != "@Biped_Layer1_Shadow" and First.layer.name != "@Biped_Layer2_Shadow" and first.layer.name != "@Biped_Layer3_Shadow" do
+			(
+				append modifierObjects First
+			)
 		)
 	)
+	
 	clearselection()
 )
 
@@ -137,34 +139,34 @@ fn DeleteShadow LayerName LayerArray=
 	try
 	(
 		if (LayerManager.getLayerFromName LayerName) != undefined then
+		(
+			if (LayerManager.getLayerFromName LayerName).current = true then
 			(
-				if (LayerManager.getLayerFromName LayerName).current = true then
+				(LayerManager.getLayerFromName "0").current = true
+				
+				clearselection()
+				
+				(LayerManager.getLayerFromName LayerName).select on
+				
+				if $ != undefined do
 				(
-					(LayerManager.getLayerFromName "0").current = true
-					
-					clearselection()
-					
-					(LayerManager.getLayerFromName LayerName).select on
-					
-					if $ != undefined do
-					(
-						delete $
-					)
-					
-					LayerManager.deleteLayerByName LayerName
+					delete $
 				)
-				else
-				(
-					(LayerManager.getLayerFromName LayerName).select on
-					
-					if $ != undefined do
-					(
-						delete $
-					)
-					
-					LayerManager.deleteLayerByName LayerName
-				)
+				
+				LayerManager.deleteLayerByName LayerName
 			)
+			else
+			(
+				(LayerManager.getLayerFromName LayerName).select on
+				
+				if $ != undefined do
+				(
+					delete $
+				)
+				
+				LayerManager.deleteLayerByName LayerName
+			)
+		)
 		else
 		(
 			messagebox "Not Exist Shadow!"
@@ -267,7 +269,7 @@ fn getBipedInmodifierObjects =
 ----------------------------------------------------------------------------------------------
 
 fn CreateShadow LayerArray LayerName = 
-(
+(	
 	if classof $ == Biped_Object then
 	(
 		if LayerManager.getLayerFromName LayerName == undefined  then
@@ -395,8 +397,8 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	----------------------------------------------------------------------------------------------
 	
 	groupbox gbLayerProperties "Layer Controller" offset:[0,20]  width: 210 height: 110
-	button btnNextLayer "Next" across:3 offset:[-10,-93] width:40
-	button btnPreLayer "Pre" offset:[-10,-93] width:40 align:#left
+	button btnPreLayer "Pre" across:3 offset:[-10,-93] width:40 
+	button btnNextLayer "Next"  offset:[-10,-93] width:40 align:#left
 	edittext etLayerNumber " " offset:[-35,-93] width:25 
 	button btnCreateLayer "Create Layer" across:2  width:95
 	button btnCollapseLayer "Collapse Layer" width:95
@@ -634,9 +636,16 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	
 	on btnCollapseLayer pressed do
 	(
-		etLayerNum = execute etLayerNumber.text 
-		biped.collapseAtLayer SelectedBiped.controller (etLayerNum-1)
-		etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
+		try
+		(
+			etLayerNum = execute etLayerNumber.text 
+			biped.collapseAtLayer SelectedBiped.controller (etLayerNum-1)
+			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
+		)
+		catch
+		(
+			
+		)
 	)
 
 	----------------------------------------------------------------------------------------------
@@ -665,67 +674,94 @@ rollout BipedLayerShadow "Biped Layer Shadow"
 	
 	on btnDeleteAllShadow pressed do
 	(
-		if (LayerManager.getLayerFromName "@Biped_Biped_Layer0_Shadow") != undefined  do
+		if (LayerManager.getLayerFromName "@Biped_Layer0_Shadow") != undefined  do
 		(
-			DeleteShadow "@Biped_Biped_Layer0_Shadow" Layer0Mesh
-			if (LayerManager.getLayerFromName "@Biped_Layer1_Shadow") != undefined  do
-			(
-				DeleteShadow "@Biped_Layer1_Shadow" Layer1Mesh
-				if (LayerManager.getLayerFromName "@Biped_Layer2_Shadow") != undefined  do
-				(
-					DeleteShadow "@Biped_Layer2_Shadow" Layer2Mesh
-					if (LayerManager.getLayerFromName "@Biped_Layer3_Shadow") != undefined  do
-					(
-						DeleteShadow "@Biped_Layer3_Shadow" Layer3Mesh
-					)
-				)
-			)
+			print "aaaaaaaa"
+			DeleteShadow "@Biped_Layer0_Shadow" Layer0Mesh
+		)
+		
+		if (LayerManager.getLayerFromName "@Biped_Layer1_Shadow") != undefined  do
+		(
+			DeleteShadow "@Biped_Layer1_Shadow" Layer1Mesh
+		)
+		
+		if (LayerManager.getLayerFromName "@Biped_Layer2_Shadow") != undefined  do
+		(
+			DeleteShadow "@Biped_Layer2_Shadow" Layer2Mesh
+		)
+				
+		if (LayerManager.getLayerFromName "@Biped_Layer3_Shadow") != undefined  do
+		(
+			DeleteShadow "@Biped_Layer3_Shadow" Layer3Mesh
 		)
 	)
 	
 	on btnNextLayer pressed do
 	(
-		etLayerNum = execute etLayerNumber.text
-		btnDeleteLayer.enabled = true
-		if biped.numLayers SelectedBiped.controller != etLayerNum then
+		try
 		(
-			biped.setCurrentLayer SelectedBiped.controller (etLayerNum + 1)
-			if biped.getCurrentLayer SelectedBiped.controller == 1 do
+			etLayerNum = execute etLayerNumber.text
+			btnDeleteLayer.enabled = true
+			if biped.numLayers SelectedBiped.controller != etLayerNum then
 			(
-				btnPreLayer.enabled = true
+				biped.setCurrentLayer SelectedBiped.controller (etLayerNum + 1)
+				if biped.getCurrentLayer SelectedBiped.controller == 1 do
+				(
+					btnPreLayer.enabled = true
+				)
+				if biped.getCurrentLayer SelectedBiped.controller == biped.numLayers SelectedBiped.controller do
+				(
+					btnNextLayer.enabled = false
+				)
 			)
+			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
+		)
+		catch
+		(
+			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
+			
 			if biped.getCurrentLayer SelectedBiped.controller == biped.numLayers SelectedBiped.controller do
 			(
 				btnNextLayer.enabled = false
 			)
 		)
-		etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 	)
 	
 	on btnPreLayer pressed do
 	(
-		etLayerNum = execute etLayerNumber.text
-		if biped.numLayers SelectedBiped.controller != 0 then
+		try
 		(
-			biped.setCurrentLayer SelectedBiped.controller (etLayerNum - 1)
-			
-			if biped.getCurrentLayer SelectedBiped.controller == (biped.numLayers SelectedBiped.controller)-1 do
+			etLayerNum = execute etLayerNumber.text
+			if biped.numLayers SelectedBiped.controller != 0 then
 			(
-				btnNextLayer.enabled = true
+				biped.setCurrentLayer SelectedBiped.controller (etLayerNum - 1)
+				
+				if biped.getCurrentLayer SelectedBiped.controller == (biped.numLayers SelectedBiped.controller)-1 do
+				(
+					btnNextLayer.enabled = true
+				)
+				
+				if  biped.getCurrentLayer SelectedBiped.controller == 0 then
+				(
+					btnPreLayer.enabled = false
+					btnDeleteLayer.enabled = false
+				)
 			)
-			
+			else
+			(
+				btnPreLayer.enabled = false
+			)
+			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
+		)
+		catch
+		(
+			etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 			if  biped.getCurrentLayer SelectedBiped.controller == 0 then
 			(
 				btnPreLayer.enabled = false
 				btnDeleteLayer.enabled = false
 			)
 		)
-		else
-		(
-
-			btnPreLayer.enabled = false
-		)
-		etLayerNumber.text = biped.getCurrentLayer SelectedBiped.controller as string
 	)
 	----------------------------------------------------------------------------------------------
 	
