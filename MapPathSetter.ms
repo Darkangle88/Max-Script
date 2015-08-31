@@ -9,8 +9,6 @@ try (destroydialog MapPathSet) catch()
 global MapPathSet
 global UseMap = #()
 global MissingMap = #()
-global RealUseMap = #()
-global RealMissingMap = #()
 global totalMapPathList = #() -- Store Total Map Path List(Single Array)
 global totalObjectList=#() -- Store Total Objects List(Double Array)
 global mapfiles=#()
@@ -18,60 +16,82 @@ global MapNameNum
 global getImageFile = #()
 global getfile = getfiles (maxfilepath + "*")
 global getDirectory = getDirectories (maxfilepath + "\*")
-global unSupportedType = #()
 
 --Function
 --=======================================================================================
 --=======================================================================================
 
-
-fn getMaterialType filepath objectNum = 
+fn addmap mapfile =
 (
-	if doesFileExist filePath == false then
+	local mapfileN=mapfile as string
+	
+	local index=finditem mapfiles mapfileN
+	
+	if index == 0 do 
 	(
-		appendIfUnique MissingMap filepath
-		appendIfUnique totalMapPathList filepath
-		
-		if (totalObjectList[finditem totalMapPathList filepath] == undefined) then
-		(
-			append totalObjectList #()
-			objectArrayNum = finditem totalMapPathList filepath
-			appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
-		)
-		else
-		(
-			objectArrayNum = finditem totalMapPathList filepath
-			appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
-		)
-	)
-	else
-	(
-		appendIfUnique UseMap filepath
-		appendIfUnique totalMapPathList filepath
-		
-		if (totalObjectList[finditem totalMapPathList filepath] == undefined) then
-		(
-			append totalObjectList #()
-			objectArrayNum = finditem totalMapPathList filepath
-			appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
-		)
-		else
-		(
-			objectArrayNum = finditem totalMapPathList filepath
-			appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
-		)
+		append mapfiles mapfileN
 	)
 )
 
+-----------------------------------------------------------------------------------------
 
-fn getFilePath =
+fn getAllMaterial = 
 (
 	UseMap = #()
 	MissingMap = #()
+
+	mapfiles=#()
+	
+	MapPathSet.lbUseMapName.items = #()
+	MapPathSet.IbPathXMapO.items = #()
+	MapPathSet.lbNotUseMapName.items = #()
+	
+	local mapPathList = getClassInstances bitmaptexture
+	local PathOMapO = #()
+	local PathXMapO = #()
+	
+	enumeratefiles addmap
+	UseMap = deepcopy mapfiles
+	
+	mapfiles=#()
+
+	enumeratefiles addmap #missing
+	missingMap = deepcopy mapfiles
+	
+
+	
+	for map in UseMap do
+	(
+		if doesFileExist map == true then
+		(
+			appendIfUnique PathOMapO map
+		)
+		else
+		(
+			appendIfUnique PathXMapO map
+		)
+	)
+	
+	MapPathSet.lbUseMapName.items = deepcopy PathOMapO
+	MapPathSet.IbPathXMapO.items = deepcopy PathXMapO
+	MapPathSet.lbNotUseMapName.items = deepcopy missingMap
+)
+
+-----------------------------------------------------------------------------------------
+
+fn getObjectMaterial = 
+(
 	totalMapPathList = #()
 	totalObjectList=#()
 	
-	--Search Objects
+	local mapPathList = getClassInstances bitmaptexture
+	
+	for map in mapPathList do
+	(
+		append totalMapPathList map
+		append totalObjectList #()
+	)
+	
 	for objectNum = 1 to objects.count do
 	(
 		if objects[objectNum].material != undefined do
@@ -84,59 +104,15 @@ fn getFilePath =
 					--Search Maps
 					for mapNum = 1 to objects[objectNum].mat.maps.count do
 					(
-						if objects[objectNum].material.maps[mapNum] != undefined  do
+						if objects[objectNum].material.maps[mapNum] != undefined do
 						(
-							case of
-							(
-								(classof objects[objectNum].material.maps[mapNum] == Bitmaptexture):
-									(
-										if objects[objectNum].material.maps[mapNum].filename != undefined do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].filename
-											getMaterialType filepath objectNum
-										)
-									)
-								(classof objects[objectNum].material.maps[mapNum] == Normal_Bump):
-									(
-										if objects[objectNum].material.maps[mapNum].normal != undefined and objects[objectNum].material.maps[mapNum].normal.filename != undefined  do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].normal.filename
-											getMaterialType filepath objectNum
-										)
-										if objects[objectNum].material.maps[mapNum].bump_map != undefined and objects[objectNum].material.maps[mapNum].bump_map.filename != undefined do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].bump_map.filename
-											getMaterialType filepath objectNum
-										)
-									)
-								(classof objects[objectNum].material.maps[mapNum] == Particle_Age):
-									(
-										if objects[objectNum].material.maps[mapNum].map1 != undefined and objects[objectNum].material.maps[mapNum].map1.filename != undefined do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].map1.filename
-											getMaterialType filepath objectNum
-										)
-										if objects[objectNum].material.maps[mapNum].map2 != undefined and objects[objectNum].material.maps[mapNum].map2.filename != undefined do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].map2.filename
-											getMaterialType filepath objectNum
-										)
-										if objects[objectNum].material.maps[mapNum].map3 != undefined and objects[objectNum].material.maps[mapNum].map3.filename != undefined do
-										(
-											filePath = objects[objectNum].material.maps[mapNum].map3.filename
-											getMaterialType filepath objectNum
-										)
-									)
-								defalut:
-								(
-									append unSupportedType (objects[objectNum].material.maps[mapNum] as string)
-
-								)
-							)
+							objectArrayNum = finditem totalMapPathList (objects[objectNum].material.maps[mapNum])
+							appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
 						)
 					)
 				)
-				(classof objects[objectNum].material == multiMaterial):
+				
+			(classof objects[objectNum].material == multiMaterial):
 				(
 					for multiMatNum = 1 to objects[objectNum].material.count do
 					(
@@ -146,54 +122,14 @@ fn getFilePath =
 							(
 								if objects[objectNum].material[multiMatNum].maps[mapNum] != undefined  do
 								(
-									case of
-									(
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Bitmaptexture):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].filename != undefined do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].filename
-													getMaterialType filepath objectNum
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Normal_Bump):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].normal != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].normal.filename != undefined  do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].normal.filename
-													getMaterialType filepath objectNum
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].bump_map != undefined  and objects[objectNum].material[multiMatNum].maps[mapNum].bump_map.filename != undefined do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].bump_map.filename
-													getMaterialType filepath objectNum
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Particle_Age):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map1 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map1.filename != undefined do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].map1.filename
-													getMaterialType filepath objectNum
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map2 != undefined  and objects[objectNum].material[multiMatNum].maps[mapNum].map2.filename != undefined do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].map2.filename
-													getMaterialType filepath objectNum
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map3 != undefined  and objects[objectNum].material[multiMatNum].maps[mapNum].map3.filename != undefined do
-												(
-													filePath = objects[objectNum].material[multiMatNum].maps[mapNum].map3.filename
-													getMaterialType filepath objectNum
-												)
-											)
-										defalut:
-										(
-											append unSupportedType (objects[objectNum].material[multiMatNum].maps[mapNum] as string)
-										)
-									)
+									objectArrayNum = finditem totalMapPathList (objects[objectNum].material[multiMatNum].maps[mapNum])
+									appendIfUnique totalObjectList[objectArrayNum] objects[objectNum].name
 								)
 							)
+						)
+						else
+						(
+							
 						)
 					)
 				)
@@ -201,273 +137,15 @@ fn getFilePath =
 		)
 	)
 	
-	for First in 1 to meditmaterials.count do
+	for ObjectNum in totalObjectList do
 	(
-		case of
+		if ObjectNum.count == 0 do
 		(
-			(classof meditmaterials[First] == standardMaterial):
-			(	
-				--Search Maps
-				for mapNum = 1 to meditmaterials[First].maps.count do
-				(
-					if meditmaterials[First].maps[mapNum] != undefined do
-					(
-						case of
-						(
-							(classof meditmaterials[First].maps[mapNum] == Bitmaptexture):
-								(
-									if meditmaterials[First].maps[mapNum].filename != undefined do
-									(
-											filepath = meditmaterials[First].maps[mapNum].filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-									)
-								)
-							(classof meditmaterials[First].maps[mapNum] == Normal_Bump):
-								(
-									if meditmaterials[First].maps[mapNum].normal != undefined do
-									(
-										if meditmaterials[First].maps[mapNum].normal.filename != undefined do
-										(
-											filepath = meditmaterials[First].maps[mapNum].normal.filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-										)
-									)
-									if meditmaterials[First].maps[mapNum].bump_map != undefined do
-									(
-										if meditmaterials[First].maps[mapNum].bump_map.filename != undefined do
-										(
-											filepath = meditmaterials[First].maps[mapNum].bump_map.filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-										)
-									)
-								)
-								
-							(classof meditmaterials[First].maps[mapNum] == Particle_Age):
-								(
-									if meditmaterials[First].maps[mapNum].map1 != undefined do
-									(
-										if meditmaterials[First].maps[mapNum].map1.filename != undefined do
-										(
-											filepath = meditmaterials[First].maps[mapNum].map1.filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-										)
-									)
-									if meditmaterials[First].maps[mapNum].map2 != undefined do
-									(
-										if meditmaterials[First].maps[mapNum].map2.filename != undefined do
-										(
-											filepath = meditmaterials[First].maps[mapNum].map2.filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-										)
-									)
-									if meditmaterials[First].maps[mapNum].map3 != undefined do
-									(
-										if meditmaterials[First].maps[mapNum].map3.filename != undefined do
-										(
-											filepath = meditmaterials[First].maps[mapNum].map3.filename
-											if doesFileExist filePath == false then
-											(
-												appendIfUnique MissingMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-											else
-											(
-												appendIfUnique UseMap filepath
-												appendIfUnique totalMapPathList filepath
-											)
-										)
-									)
-								)
-							default:
-								(
-									append unSupportedType (meditmaterials[First].maps[mapNum] as string)
-								)
-						)
-					)
-				)
-			)
-			(classof meditmaterials[First] == multiMaterial):
-			(
-				for multiMatNum = 1 to meditmaterials[First].material.count do
-				(
-					if meditmaterials[First].material[multiMatNum] != undefined and classof meditMaterials[First].material[multiMatNum] == standardMaterial do
-					(
-						for mapNum = 1 to meditmaterials[First].material[multiMatNum].maps.count do
-						(
-							if meditmaterials[First].material[multiMatNum].maps[mapNum] != undefined  do
-							(
-								case of
-								(
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Bitmaptexture):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].filename != undefined do
-											(
-												filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].filename
-												if doesFileExist filePath == false then
-												(
-													appendIfUnique MissingMap filepath
-													appendIfUnique totalMapPathList filepath
-												)
-												else
-												(
-													appendIfUnique UseMap filepath
-													appendIfUnique totalMapPathList filepath
-												)
-											)
-										)
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Normal_Bump):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].normal != undefined do
-											(
-												if meditmaterials[First].material[multiMatNum].maps[mapNum].normal.filename != undefined do
-											(
-												filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].normal.filename
-												if doesFileExist filePath == false then
-												(
-													appendIfUnique MissingMap filepath
-													appendIfUnique totalMapPathList filepath
-												)
-												else
-												(
-													appendIfUnique UseMap filepath
-													appendIfUnique totalMapPathList filepath
-												)
-											)
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map != undefined do
-											(
-												if meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map.filename != undefined do
-												(
-													filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map.filename
-													if doesFileExist filePath == false then
-													(
-														appendIfUnique MissingMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-													else
-													(
-														appendIfUnique UseMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-												)
-											)
-										)
-										
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Particle_Age):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map1 != undefined do
-											(
-												if meditmaterials[First].material[multiMatNum].maps[mapNum].map1.filename != undefined do
-												(
-													filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].map1.filename
-													if doesFileExist filePath == false then
-													(
-														appendIfUnique MissingMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-													else
-													(
-														appendIfUnique UseMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-												)
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map2 != undefined do
-											(
-												if meditmaterials[First].material[multiMatNum].maps[mapNum].map2.filename != undefined do
-												(
-													filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].map2.filename
-													if doesFileExist filePath == false then
-													(
-														appendIfUnique MissingMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-													else
-													(
-														appendIfUnique UseMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-												)
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map3 != undefined do
-											(
-												if meditmaterials[First].material[multiMatNum].maps[mapNum].map3.filename != undefined do
-												(
-													filepath = meditmaterials[First].material[multiMatNum].maps[mapNum].map3.filename
-													if doesFileExist filePath == false then
-													(
-														appendIfUnique MissingMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-													else
-													(
-														appendIfUnique UseMap filepath
-														appendIfUnique totalMapPathList filepath
-													)
-												)
-											)
-										)
-									dafault:
-										(
-											append unSupportedType (meditmaterials[First].material[multiMatNum].maps[mapNum] as string)
-										)
-								)
-							)
-						)
-					)
-				)
-			)
+				append ObjectNum "-None-"
 		)
 	)
-
 )
-
---------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 
 fn getFileNameInMaxPath selectName= 
 (
@@ -486,7 +164,10 @@ fn getFileNameInMaxPath selectName=
 		(
 			if (getFilenameFile selectName + getFilenameType selectName == getFilenameFile getfile[First] + getFilenameType getfile[First]) do
 			(
-				if getFilenameType getfile[First] == ".png" or getFilenameType getfile[First] == ".PNG" or getFilenameType getfile[First] == ".JPG" or getFilenameType getfile[First] == ".jpg" or getFilenameType getfile[First] == ".BMP" or getFilenameType getfile[First] == ".bmp" or getFilenameType getfile[First] == ".JPEG" or getFilenameType getfile[First] == ".jpeg" or getFilenameType getfile[First] == ".TGA" or getFilenameType getfile[First] == ".tga" or getFilenameType getfile[First] == ".TIFF" or getFilenameType getfile[First] == ".tiff" or getFilenameType getfile[First] == ".GIF" or getFilenameType getfile[First] == ".gif" do
+				if getFilenameType getfile[First] == ".png" or getFilenameType getfile[First] == ".PNG" or  \
+					getFilenameType getfile[First] == ".JPG" or getFilenameType getfile[First] == ".jpg" or getFilenameType getfile[First] == ".BMP" or getFilenameType getfile[First] == ".bmp" or \
+					getFilenameType getfile[First] == ".JPEG" or getFilenameType getfile[First] == ".jpeg" or getFilenameType getfile[First] == ".TGA" or getFilenameType getfile[First] == ".tga" or \
+					getFilenameType getfile[First] == ".TIFF" or getFilenameType getfile[First] == ".tiff" or getFilenameType getfile[First] == ".GIF" or getFilenameType getfile[First] == ".gif" do
 				(
 					appendIfUnique getImageFile getfile[First]
 				)
@@ -498,266 +179,18 @@ fn getFileNameInMaxPath selectName=
 
 --------------------------------------------------------------------------------------
 
-fn FindArrayList = 
-(
-	MapPathSet.lbUseMapName.items = #()
-	MapPathSet.IbPathXMapO.items = #()
-	MapPathSet.lbNotUseMapName.items = #()
-	
-	local lbUseMap = #()
-	local IbXO = #()
-
-	
-	for FirstNum in 1 to RealUseMap.count do
-	(
-		if Usemap.count != 0 and finditem Usemap RealUseMap[FirstNum] != 0 then
-		(
-			appendIfUnique lbUseMap RealUseMap[FirstNum]
-		)
-		else
-		(
-			appendIfUnique IbXO RealUseMap[FirstNum]
-		)
-	)
-	
-	for CompareFirstNum in 1 to unSupportedType.count do
-	(
-		UnSupportedNum = finditem unSupportedType unSupportedType[CompareFirstNum]
-		for CompareSecondNum in 1 to  RealUseMap.count do
-		(
-			RealUseMapNum = finditem RealUseMap RealUseMap[CompareSecondNum]
-			print RealUseMap[RealUseMapNum]
-			if (unSupportedType[UnSupportedNum]) == (RealUseMap[RealUseMapNum]) do
-			(
-				deleteitem IbXO RealUseMap[RealUseMapNum]
-			)
-		)
-	)
-	
-	MapPathSet.lbUseMapName.items = deepcopy  lbUseMap
-	MapPathSet.IbPathXMapO.items = deepcopy IbXO
-	MapPathSet.lbNotUseMapName.items = deepcopy RealMissingMap
-	MapPathSet.lbUnsupportedMaterial.items = deepcopy unSupportedType
-)
-
---------------------------------------------------------------------------------------
-
 fn Changemap selectNameInList changeMapPath = 
 (
 	for First in 1 to meditmaterials.count do
 	(
-		case of
-		(
-			(classof meditmaterials[First] == standardMaterial):
-			(	
-				--Search Maps
-				for mapNum = 1 to meditmaterials[First].maps.count do
-				(
-					if meditmaterials[First].maps[mapNum] != undefined do
-					(
-						case of
-						(
-							(classof meditmaterials[First].maps[mapNum] == Bitmaptexture):
-								(
-									if meditmaterials[First].maps[mapNum].filename == selectNameInList do
-									(
-										meditMaterials[First].maps[mapNum].filename = changeMapPath
-									)
-								)
-							(classof meditmaterials[First].maps[mapNum] == Normal_Bump):
-								(
-									if meditmaterials[First].maps[mapNum].normal != undefined and meditmaterials[First].maps[mapNum].normal.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].normal.filename = changeMapPath
-									)
-									if meditmaterials[First].maps[mapNum].bump_map != undefined and meditmaterials[First].maps[mapNum].bump_map.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].bump_map.filename = changeMapPath
-									)
-								)
-								
-							(classof meditmaterials[First].maps[mapNum] == Particle_Age):
-								(
-									if meditmaterials[First].maps[mapNum].map1 != undefined and meditmaterials[First].maps[mapNum].map1.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map1.filename  = changeMapPath
-									)
-									if meditmaterials[First].maps[mapNum].map2 != undefined and meditmaterials[First].maps[mapNum].map2.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map2.filename  = changeMapPath
-									)
-									if meditmaterials[First].maps[mapNum].map3 != undefined and meditmaterials[First].maps[mapNum].map3.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map3.filename  = changeMapPath
-									)
-								)
-						)
-					)
-				)
-			)
-			(classof meditmaterials[First] == multiMaterial):
-			(
-				for multiMatNum = 1 to meditmaterials[First].material.count do
-				(
-					if meditmaterials[First].material[multiMatNum] != undefined and classof meditMaterials[First].material[multiMatNum] == standardMaterial do
-					(
-						for mapNum = 1 to meditmaterials[First].material[multiMatNum].maps.count do
-						(
-							if meditmaterials[First].material[multiMatNum].maps[mapNum] != undefined  do
-							(
-								case of
-								(
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Bitmaptexture):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].filename = changeMapPath
-											)
-										)
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Normal_Bump):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].normal != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].normal.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].normal.filename = changeMapPath
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map.filename = changeMapPath
-											)
-										)
-										
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Particle_Age):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map1 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map1.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map1.filename  = changeMapPath
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map2 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map2.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map2.filename  = changeMapPath
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map3 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map3.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map3.filename  = changeMapPath
-											)
-										)
-								)
-							)
-						)
-					)
-				)
-			)
-		)
+		
 	)
 	
 	for objectNum = 1 to objects.count do
 	(
 		if objects[objectNum].material != undefined do
 		(
-			--Select Objects.Material(Standard or Multi)
-			case of
-			(
-				(classof objects[objectNum].material == standardMaterial):
-				(	
-					--Search Maps
-					for mapNum = 1 to objects[objectNum].mat.maps.count do
-					(
-						if objects[objectNum].material.maps[mapNum] != undefined  do
-						(
-							case of
-							(
-								(classof objects[objectNum].material.maps[mapNum] == Bitmaptexture):
-									(
-										if objects[objectNum].material.maps[mapNum].filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].filename = changeMapPath
-										)
-									)
-								(classof objects[objectNum].material.maps[mapNum] == Normal_Bump):
-									(
-										if objects[objectNum].material.maps[mapNum].normal != undefined and objects[objectNum].material.maps[mapNum].normal.filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].normal.filename = changeMapPath
-										)
-										
-										if objects[objectNum].material.maps[mapNum].bump_map != undefined and objects[objectNum].material.maps[mapNum].bump_map.filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].bump_map.filename = changeMapPath
-										)
-									)
-								(classof objects[objectNum].material.maps[mapNum] == Particle_Age):
-									(
-										if objects[objectNum].material.maps[mapNum].map1 != undefined  and objects[objectNum].material.maps[mapNum].map1.filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].map1.filename = changeMapPath
-										)
-										
-										if objects[objectNum].material.maps[mapNum].map2 != undefined and objects[objectNum].material.maps[mapNum].map2.filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].map2.filename = changeMapPath
-										)
-										
-										if objects[objectNum].material.maps[mapNum].map3 != undefined and objects[objectNum].material.maps[mapNum].map3.filename == selectNameInList do
-										(
-											objects[objectNum].material.maps[mapNum].map3.filename = changeMapPath											
-										)
-									)
-							)
-						)
-					)
-				)
-				(classof objects[objectNum].material == multiMaterial):
-				(
-					for multiMatNum = 1 to objects[objectNum].material.count do
-					(
-						if objects[objectNum].material[multiMatNum] != undefined and classof objects[objectNum].material[multiMatNum] == standardMaterial do
-						(
-							for mapNum = 1 to objects[objectNum].material[multiMatNum].maps.count do
-							(
-								if objects[objectNum].material[multiMatNum].maps[mapNum] != undefined  do
-								(
-									case of
-									(
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Bitmaptexture): 
-											( 
-												if objects[objectNum].material[multiMatNum].maps[mapNum].filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].filename == changeMapPath
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Normal_Bump):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].normal != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].normal.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].normal.filename = changeMapPath
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].bump_map != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].bump_map.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].bump_map.filename = changeMapPath
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Particle_Age):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map1 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map1.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map1.filename = changeMapPath
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map2 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map2.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map2.filename = changeMapPath
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map3 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map3.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map3.filename = changeMapPath
-												)
-											) 
-									)
-								)
-							)
-						)
-					)
-				)
-			)
+			
 		)
 	)
 )
@@ -774,250 +207,17 @@ fn deletemap selectNameInList =
 	
 	for First in 1 to meditmaterials.count do
 	(
-		case of
-		(
-			(classof meditmaterials[First] == standardMaterial):
-			(	
-				--Search Maps
-				for mapNum = 1 to meditmaterials[First].maps.count do
-				(
-					if meditmaterials[First].maps[mapNum] != undefined do
-					(
-						case of
-						(
-							(classof meditmaterials[First].maps[mapNum] == Bitmaptexture):
-								(
-									if meditmaterials[First].maps[mapNum] != undefined and meditmaterials[First].maps[mapNum].filename == selectNameInList do
-									(
-										meditMaterials[First].maps[mapNum] = undefined
-									)
-								)
-							(classof meditmaterials[First].maps[mapNum] == Normal_Bump):
-								(
-									if meditmaterials[First].maps[mapNum].normal != undefined and meditmaterials[First].maps[mapNum].normal.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].normal = undefined
-									)
-									if meditmaterials[First].maps[mapNum].bump_map != undefined and meditmaterials[First].maps[mapNum].bump_map.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].bump_map = undefined
-									)
-								)
-								
-							(classof meditmaterials[First].maps[mapNum] == Particle_Age):
-								(
-									if meditmaterials[First].maps[mapNum].map1 != undefined and meditmaterials[First].maps[mapNum].map1.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map1 = undefined
-									)
-									if meditmaterials[First].maps[mapNum].map2 != undefined and meditmaterials[First].maps[mapNum].map2.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map2 = undefined
-									)
-									if meditmaterials[First].maps[mapNum].map3 != undefined and meditmaterials[First].maps[mapNum].map3.filename == selectNameInList do
-									(
-										meditmaterials[First].maps[mapNum].map3 = undefined
-									)
-								)
-						)
-					)
-				)
-			)
-			(classof meditmaterials[First] == multiMaterial):
-			(
-				for multiMatNum = 1 to meditmaterials[First].material.count do
-				(
-					if meditmaterials[First].material[multiMatNum] != undefined and classof meditMaterials[First].material[multiMatNum] == standardMaterial do
-					(
-						for mapNum = 1 to meditmaterials[First].material[multiMatNum].maps.count do
-						(
-							if meditmaterials[First].material[multiMatNum].maps[mapNum] != undefined  do
-							(
-								case of
-								(
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Bitmaptexture):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].filename == selectNameInList and meditmaterials[First].material[multiMatNum].maps[mapNum].filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum] = undefined
-											)
-										)
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Normal_Bump):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].normal != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].normal.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].normal = undefined
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].bump_map = undefined
-											)
-										)
-										
-									(classof meditmaterials[First].material[multiMatNum].maps[mapNum] == Particle_Age):
-										(
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map1 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map1.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map1 = undefined
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map2 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map2.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map2 = undefined
-											)
-											if meditmaterials[First].material[multiMatNum].maps[mapNum].map3 != undefined and meditmaterials[First].material[multiMatNum].maps[mapNum].map3.filename == selectNameInList do
-											(
-												meditmaterials[First].material[multiMatNum].maps[mapNum].map3 = undefined
-											)
-										)
-								)
-							)
-						)
-					)
-				)
-			)
-		)
+		
 	)
 	
 	for objectNum = 1 to objects.count do
 	(
 		if objects[objectNum].material != undefined do
 		(
-			--Select Objects.Material(Standard or Multi)
-			case of
-			(
-				(classof objects[objectNum].material == standardMaterial):
-				(	
-					--Search Maps
-					for mapNum = 1 to objects[objectNum].mat.maps.count do
-					(
-						if objects[objectNum].material.maps[mapNum] != undefined  do
-							(
-								case of
-								(
-									(classof objects[objectNum].material.maps[mapNum] == Bitmaptexture):
-										(
-											if objects[objectNum].material.maps[mapNum] != undefined and objects[objectNum].material.maps[mapNum].filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum] = undefined
-											)
-										)
-									(classof objects[objectNum].material.maps[mapNum] == Normal_Bump):
-										(
-											if objects[objectNum].material.maps[mapNum].normal != undefined and objects[objectNum].material.maps[mapNum].normal.filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum].normal = undefined
-											)
-											
-											if objects[objectNum].material.maps[mapNum].bump_map != undefined and objects[objectNum].material.maps[mapNum].bump_map.filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum].bump_map = undefined
-											)
-										)
-									(classof objects[objectNum].material.maps[mapNum] == Particle_Age):
-										(
-											if objects[objectNum].material.maps[mapNum].map1 != undefined  and objects[objectNum].material.maps[mapNum].map1.filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum].map1 = undefined
-											)
-											
-											if objects[objectNum].material.maps[mapNum].map2 != undefined and objects[objectNum].material.maps[mapNum].map2.filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum].map2 = undefined
-											)
-											
-											if objects[objectNum].material.maps[mapNum].map3 != undefined and objects[objectNum].material.maps[mapNum].map3.filename == selectNameInList do
-											(
-												objects[objectNum].material.maps[mapNum].map3 = undefined								
-											)
-										)
-								)
-							)
-					)
-				)
-				(classof objects[objectNum].material == multiMaterial):
-				(
-					for multiMatNum = 1 to objects[objectNum].material.count do
-					(
-						if objects[objectNum].material[multiMatNum] != undefined and classof objects[objectNum].material[multiMatNum] == standardMaterial then
-						(
-							for mapNum = 1 to objects[objectNum].material[multiMatNum].maps.count do
-							(
-								if objects[objectNum].material[multiMatNum].maps[mapNum] != undefined  do
-								(
-									case of
-									(
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Bitmaptexture): 
-											( 
-												if objects[objectNum].material[multiMatNum].maps[mapNum].filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum] = undefined
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Normal_Bump):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].normal != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].normal.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].normal = undefined
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].bump_map != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].bump_map.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].bump_map = undefined
-												)
-											)
-										(classof objects[objectNum].material[multiMatNum].maps[mapNum] == Particle_Age):
-											(
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map1 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map1.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map1 = undefined
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map2 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map2.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map2 = undefined
-												)
-												if objects[objectNum].material[multiMatNum].maps[mapNum].map3 != undefined and objects[objectNum].material[multiMatNum].maps[mapNum].map3.filename == selectNameInList do
-												(
-													objects[objectNum].material[multiMatNum].maps[mapNum].map3 = undefined
-												)
-											) 
-									)
-								)
-							)
-						)
-					)
-				)
-			)
+			
 		)
 	)
 )
-
---------------------------------------------------------------------------------------
-fn addmap mapfile =
-(
-	local mapfileN=mapfile as string
-	
-	local index=finditem mapfiles mapfileN
-	if index == 0 do 
-	(
-		append mapfiles mapfileN
-	)
-)
-
---------------------------------------------------------------------------------------
-
-fn RealFindMap =
-(
-	RealUseMap = #()
-	RealMissingMap = #()
-	mapfiles=#()
-	
-	enumeratefiles addmap
-	RealUseMap = deepcopy mapfiles
-	mapfiles=#()
-	enumeratefiles addmap #missing
-	RealMissingMap = deepcopy mapfiles
-)	
-
---------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------
 
@@ -1058,17 +258,14 @@ rollout MapPathSet "Map Path Set"
 	dropdownlist ddlSameFilenameInMaxPath "Same file name in the max file path"  width: 480 offset:[0,-210]
 	
 	--------------------------------------------------------------------------------------
-	
-	ListBox lbUnsupportedMaterial "Unsupported Material List" height:10 width:150 offset:[575,-23]
 
 --=======================================================================================
 --=======================================================================================
 
 	on MapPathSet open do
 	(
-		RealFindMap()
-		getFilePath()
-		FindArrayList()
+		getAllMaterial()
+		getObjectMaterial()
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -1078,9 +275,6 @@ rollout MapPathSet "Map Path Set"
 		if IbPathXMapO.selection !=0 and ddlSameFilenameInMaxPath.items.count > 0 then
 		(
 			Changemap IbPathXMapO.items[IbPathXMapO.selection] ddlSameFilenameInMaxPath.items[ddlSameFilenameInMaxPath.selection]
-			RealFindMap()
-			getFilePath()
-			FindArrayList()
 		)
 		else
 		(
@@ -1096,7 +290,6 @@ rollout MapPathSet "Map Path Set"
 		if IbPathXMapO.selection == 0 and lbUseMapName.selection == 0 and lbNotUseMapName.selection == 0 do
 		(
 			messagebox "Select Map"
-			
 		)
 		
 		undo on
@@ -1116,9 +309,6 @@ rollout MapPathSet "Map Path Set"
 						deletemap lbNotUseMapName.items[lbNotUseMapName.selection]
 					)
 			)
-			RealFindMap()
-			getFilePath()
-			FindArrayList()
 		)
 		
 	)
@@ -1148,8 +338,6 @@ rollout MapPathSet "Map Path Set"
 				$.mat = undefined
 			)
 		)
-		getFilePath()
-
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -1175,12 +363,14 @@ rollout MapPathSet "Map Path Set"
 	
 	on IbPathXMapO selected Num do
 	(
+		
 		try
 		(
 			ddlSameFilenameInMaxPath.items = #()
+			
 			for i in 1 to totalMapPathList.count do
 			(
-				if totalMapPathList[i] == IbPathXMapO.items[Num] do
+				if totalMapPathList[i].filename == IbPathXMapO.items[Num] do
 				(
 					mlbObject.items = totalObjectList[i]
 				)
@@ -1192,17 +382,8 @@ rollout MapPathSet "Map Path Set"
 				lbNotUseMapName.selection = 0
 				btnOpenFolderInExplorer.enabled = false
 				ddlSameFilenameInMaxPath.enabled = true
-				
-				if (getfilesize IbPathXMapO.items[Num]) > 0 then
-				(
-					bmShowImage.filename = IbPathXMapO.items[Num]
-					
-				)
-				else bmShowImage.bitmap = (bitmap 150 150)
+				btnSameFilenameInMaxPath.enabled = true
 			)
-			
-			MapNameNum = Num
-			MapNameNum = getFilenamePath IbPathXMapO.items[Num]
 			
 			getFileNameInMaxPath IbPathXMapO.items[Num]
 			
@@ -1220,7 +401,7 @@ rollout MapPathSet "Map Path Set"
 		(
 			for i in 1 to totalMapPathList.count do
 			(
-				if totalMapPathList[i] == lbUseMapName.items[Num] do
+				if totalMapPathList[i].filename == lbUseMapName.items[Num] do
 				(
 					mlbObject.items = totalObjectList[i]
 				)
@@ -1232,6 +413,7 @@ rollout MapPathSet "Map Path Set"
 				lbNotUseMapName.selection = 0
 				btnOpenFolderInExplorer.enabled = true
 				ddlSameFilenameInMaxPath.enabled = false
+				btnSameFilenameInMaxPath.enabled = false
 				
 				if (getfilesize lbUseMapName.items[Num]) > 0 then
 				(
@@ -1250,37 +432,22 @@ rollout MapPathSet "Map Path Set"
 	
 	on lbNotUseMapName selected Num do
 	(
-		local NoneArray = #("-None-")
-		try
+		for i in 1 to totalMapPathList.count do
 		(
-			for i in 1 to totalMapPathList.count do
+			if totalMapPathList[i].filename == lbNotUseMapName.items[Num] do
 			(
-				if totalMapPathList[i] == lbNotUseMapName.items[Num] then
-				(
-					mlbObject.items = totalObjectList[i]
-				)
-				
-				if finditem totalMapPathList  lbNotUseMapName.items[Num] == 0 do
-				(
-					mlbObject.items = NoneArray
-				)
+				mlbObject.items = totalObjectList[i]
 			)
-	
-			if Num != 0 do
-			(
-				IbPathXMapO.selection = 0
-				lbUseMapName.selection = 0
-				btnOpenFolderInExplorer.enabled = false 
-				ddlSameFilenameInMaxPath.enabled = false
-				
-				bmShowImage.bitmap = (bitmap 150 150)
-				
-			)
-			
-			MapNameNum = Num
-			MapNameNum = getFilenamePath lbNotUseMapName.items[Num]
 		)
-		catch()
+
+		if Num != 0 do
+		(
+			IbPathXMapO.selection = 0
+			lbUseMapName.selection = 0
+			btnOpenFolderInExplorer.enabled = false
+			ddlSameFilenameInMaxPath.enabled = false
+			btnSameFilenameInMaxPath.enabled = false
+		)
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -1314,14 +481,13 @@ rollout MapPathSet "Map Path Set"
 			on btnYes pressed do
 			(
 				macros.run "Medit Tools" "clear_medit_slots"
+				
 				for objectNum = 1 to objects.count do
 				(
 					objects[objectNum].material = undefined
 				)
+				
 				destroydialog rollResetAllMaterial
-				RealFindMap()
-				getFilePath()
-				FindArrayList()
 			)
 				
 			on btnNo pressed do
@@ -1359,9 +525,6 @@ rollout MapPathSet "Map Path Set"
 							lbNotUseMapName.selection = 0
 						)
 				)
-				RealFindMap()
-				getFilePath()
-				FindArrayList()
 			)
 		)
 		else
