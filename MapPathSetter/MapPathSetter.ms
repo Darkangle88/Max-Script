@@ -480,13 +480,15 @@ rollout MapPathSet "Map Path Set"
 
 			on btnYes pressed do
 			(
-				macros.run "Medit Tools" "clear_medit_slots"
-				
-				for objectNum = 1 to objects.count do
+				undo on
 				(
-					objects[objectNum].material = undefined
+					macros.run "Medit Tools" "clear_medit_slots"
+					
+					for objectNum = 1 to objects.count do
+					(
+						objects[objectNum].material = undefined
+					)
 				)
-				
 				destroydialog rollResetAllMaterial
 			)
 				
