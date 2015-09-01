@@ -58,8 +58,6 @@ fn getAllMaterial =
 	enumeratefiles addmap #missing
 	missingMap = deepcopy mapfiles
 	
-
-	
 	for map in UseMap do
 	(
 		if doesFileExist map == true then
@@ -181,16 +179,13 @@ fn getFileNameInMaxPath selectName=
 
 fn Changemap selectNameInList changeMapPath = 
 (
-	for First in 1 to meditmaterials.count do
-	(
-		
-	)
+	local mapPathList = getClassInstances bitmaptexture
 	
-	for objectNum = 1 to objects.count do
+	for map in mapPathList do
 	(
-		if objects[objectNum].material != undefined do
+		if map.filename == selectNameInList do
 		(
-			
+			map.filename = changeMapPath
 		)
 	)
 )
@@ -199,20 +194,17 @@ fn Changemap selectNameInList changeMapPath =
 	
 fn deletemap selectNameInList = 
 (
-	defaultMtlLibFile = MeditUtilities.getDefaultLibraryFile()
+	local mapPathList = getClassInstances bitmaptexture
+	local defaultMtlLibFile = MeditUtilities.getDefaultLibraryFile()
+	
 	if defaultMtlLibFile != undefined do
 	(
 		defaultMtlLib = loadTempMaterialLibrary defaultMtlLibFile
 	)
 	
-	for First in 1 to meditmaterials.count do
+	for map in 1 to mapPathList.count do
 	(
-		
-	)
-	
-	for objectNum = 1 to objects.count do
-	(
-		if objects[objectNum].material != undefined do
+		if mapPathList[map].filename == selectNameInList do
 		(
 			
 		)
@@ -280,7 +272,11 @@ rollout MapPathSet "Map Path Set"
 		(
 			messagebox "Select Path!"
 		)			
-			IbPathXMapO.selection = 0
+		
+		IbPathXMapO.selection = 0
+		
+		getAllMaterial()
+		getObjectMaterial()
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -289,7 +285,7 @@ rollout MapPathSet "Map Path Set"
 	(
 		if IbPathXMapO.selection == 0 and lbUseMapName.selection == 0 and lbNotUseMapName.selection == 0 do
 		(
-			messagebox "Select Map"
+			messagebox "Select Map!"
 		)
 		
 		undo on
@@ -298,6 +294,7 @@ rollout MapPathSet "Map Path Set"
 			(
 				(IbPathXMapO.selection !=0):
 					(
+						print IbPathXMapO.selection
 						deletemap IbPathXMapO.items[IbPathXMapO.selection]
 					)
 				(lbUseMapName.selection != 0):
@@ -310,7 +307,8 @@ rollout MapPathSet "Map Path Set"
 					)
 			)
 		)
-		
+		getAllMaterial()
+		getObjectMaterial()
 	)
 	--------------------------------------------------------------------------------------
 	
@@ -338,6 +336,9 @@ rollout MapPathSet "Map Path Set"
 				$.mat = undefined
 			)
 		)
+		
+		getAllMaterial()
+		getObjectMaterial()
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -363,7 +364,6 @@ rollout MapPathSet "Map Path Set"
 	
 	on IbPathXMapO selected Num do
 	(
-		
 		try
 		(
 			ddlSameFilenameInMaxPath.items = #()
@@ -388,7 +388,6 @@ rollout MapPathSet "Map Path Set"
 			getFileNameInMaxPath IbPathXMapO.items[Num]
 			
 			ddlSameFilenameInMaxPath.items = getImageFile
-			
 		)
 		catch()
 	)
@@ -432,22 +431,26 @@ rollout MapPathSet "Map Path Set"
 	
 	on lbNotUseMapName selected Num do
 	(
-		for i in 1 to totalMapPathList.count do
+		try
 		(
-			if totalMapPathList[i].filename == lbNotUseMapName.items[Num] do
+			for i in 1 to totalMapPathList.count do
 			(
-				mlbObject.items = totalObjectList[i]
+				if totalMapPathList[i].filename == lbNotUseMapName.items[Num] do
+				(
+					mlbObject.items = totalObjectList[i]
+				)
+			)
+
+			if Num != 0 do
+			(
+				IbPathXMapO.selection = 0
+				lbUseMapName.selection = 0
+				btnOpenFolderInExplorer.enabled = false
+				ddlSameFilenameInMaxPath.enabled = false
+				btnSameFilenameInMaxPath.enabled = false
 			)
 		)
-
-		if Num != 0 do
-		(
-			IbPathXMapO.selection = 0
-			lbUseMapName.selection = 0
-			btnOpenFolderInExplorer.enabled = false
-			ddlSameFilenameInMaxPath.enabled = false
-			btnSameFilenameInMaxPath.enabled = false
-		)
+		catch()
 	)
 	
 	--------------------------------------------------------------------------------------
@@ -498,6 +501,9 @@ rollout MapPathSet "Map Path Set"
 			)
 		)
 		createdialog rollResetAllMaterial width: 150 height: 75
+		
+		getAllMaterial()
+		getObjectMaterial()
 	 )
 	
 	--------------------------------------------------------------------------------------
@@ -514,7 +520,6 @@ rollout MapPathSet "Map Path Set"
 						(
 							ChangeMap IbPathXMapO.items[IbPathXMapO.selection] ChangeFilePath.text
 							IbPathXMapO.selection = 0
-
 						)
 					(lbUseMapName.selection != 0):
 						(
@@ -532,10 +537,11 @@ rollout MapPathSet "Map Path Set"
 		else
 		(
 			messagebox "Select Path!"
-				
 		)
+		
 		ChangeFilePath.text = ""
-	
+		getAllMaterial()
+		getObjectMaterial()
 	)
 	 --------------------------------------------------------------------------------------
 
