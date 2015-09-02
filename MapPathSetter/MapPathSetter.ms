@@ -21,6 +21,25 @@ global getDirectory = getDirectories (maxfilepath + "\*")
 --=======================================================================================
 --=======================================================================================
 
+fn wipeBitmapTextures file:"" useFullPath:off =
+(
+	if useFullPath do file = pathConfig.mapPaths.getFullFilePath file
+		
+	for tx in (getclassinstances bitmaptexture asTrackViewPick:on) where iskindof tx.anim.filename String do 
+	(
+		f = tx.anim.filename
+		
+		if useFullPath do f = pathConfig.mapPaths.getFullFilePath f
+			
+		if (pathConfig.pathsResolveEquivalent f file) do
+		(
+			for s=1 to tx.client.numsubs where tx.client[s].value == tx.anim do tx.client[s].value = undefined
+		)
+	)
+)
+
+-----------------------------------------------------------------------------------------
+
 fn addmap mapfile =
 (
 	local mapfileN=mapfile as string
@@ -206,7 +225,7 @@ fn deletemap selectNameInList =
 	(
 		if mapPathList[map].filename == selectNameInList do
 		(
-			
+			wipeBitmapTextures file:mapPathList[map].filename
 		)
 	)
 )
@@ -221,6 +240,7 @@ fn deletemap selectNameInList =
 rollout MapPathSet "Map Path Set"
 (	
 	--------------------------------------------------------------------------------------
+	
 	ListBox lbUseMapName "Map (Path O, Map O)" width: 550 height: 8 selection:0
 	ListBox IbPathXMapO "Map (Path X, Map O)" width: 550 height: 5 selection:0
 	ListBox lbNotUseMapName "Missing Map / File (Path X, Map X)" offset:[0,50]width: 550 height: 8 selection:0
@@ -239,21 +259,27 @@ rollout MapPathSet "Map Path Set"
 	button btnFindPath "..." offset:[225,-55] width: 35
 	button btnSetPath "Set Path" offset:[300,-26] width: 100
 	button btnSameFilenameInMaxPath "Change Path" offset:[155,-194] width:70
-	
+	button btnAboutScript "About" offset:[170,171]width: 140
 	
 	--------------------------------------------------------------------------------------
 	
-	edittext ChangeFilePath "File Path: " offset:[0,144] width: 550
+	edittext ChangeFilePath "File Path: " offset:[0,-52] width: 550
 	
 	--------------------------------------------------------------------------------------
 	
 	dropdownlist ddlSameFilenameInMaxPath "Same file name in the max file path"  width: 480 offset:[0,-210]
 	
 	--------------------------------------------------------------------------------------
-
+	
+	imgtag itImage  bitmap: (bitmap 145 145) offset:[570,-15]
+	
+	--------------------------------------------------------------------------------------
+	
+	label lbImage "Sample Image"  offset:[240,-167]
+	
 --=======================================================================================
 --=======================================================================================
-
+	
 	on MapPathSet open do
 	(
 		getAllMaterial()
@@ -294,7 +320,6 @@ rollout MapPathSet "Map Path Set"
 			(
 				(IbPathXMapO.selection !=0):
 					(
-						print IbPathXMapO.selection
 						deletemap IbPathXMapO.items[IbPathXMapO.selection]
 					)
 				(lbUseMapName.selection != 0):
@@ -359,13 +384,15 @@ rollout MapPathSet "Map Path Set"
 	(
 		shellLaunch "explorer.exe" MapNameNum
 	)
-	
+		
 	--------------------------------------------------------------------------------------
 	
 	on IbPathXMapO selected Num do
 	(
 		try
 		(
+			itImage.bitmap = (openBitmap IbPathXMapO.items[IbPathXMapO.selection])
+			
 			ddlSameFilenameInMaxPath.items = #()
 			
 			for i in 1 to totalMapPathList.count do
@@ -398,6 +425,8 @@ rollout MapPathSet "Map Path Set"
 	(
 		try
 		(
+			itImage.bitmap = (openBitmap lbUseMapName.items[lbUseMapName.selection])
+			
 			for i in 1 to totalMapPathList.count do
 			(
 				if totalMapPathList[i].filename == lbUseMapName.items[Num] do
@@ -433,6 +462,8 @@ rollout MapPathSet "Map Path Set"
 	(
 		try
 		(
+			itImage.bitmap = (openBitmap lbNotUseMapName.items[IbPathXMapO.selection])
+			
 			for i in 1 to totalMapPathList.count do
 			(
 				if totalMapPathList[i].filename == lbNotUseMapName.items[Num] do
@@ -545,5 +576,24 @@ rollout MapPathSet "Map Path Set"
 	)
 	 --------------------------------------------------------------------------------------
 
+	on btnAboutScript pressed do 
+	(
+		rollout rollAbout "About"
+		(
+		    label ScriptName "Map Path Setter ver 0.5"
+			progressBar horizLine "ProgressBar" height:3 enabled:true value:100 color:(color 10 10 0) align:#center
+			label Contact "Email: jinsuckelf@naver.com"
+			label github "Github: https://github.com/Darkangle88/Max-Script/"
+			button Okay "Okay" width:50 offset:[0,5]
+			
+			on Okay pressed do
+			(
+				destroydialog rollAbout
+			)
+		)
+		createdialog rollAbout width: 270 height: 100
+	)
+	
+	 --------------------------------------------------------------------------------------
 )
 createdialog MapPathSet width: 750 height: 500
