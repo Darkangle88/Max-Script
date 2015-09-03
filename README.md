@@ -1,5 +1,3 @@
-![Picture](https://scriptthatcode.files.wordpress.com/2013/02/graphics_webpage_logo.jpg)
-
 #Max-Script
 
 ###Max Script Document </br>
