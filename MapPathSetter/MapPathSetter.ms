@@ -21,6 +21,24 @@ global getDirectory = getDirectories (maxfilepath + "\*")
 --=======================================================================================
 --=======================================================================================
 
+fn getAsset =
+(
+	for i = 1 to AssetManager.GetNumAssets() do
+	(
+	
+		local AUIO = AssetManager.GetAssetByIndex i--get the AssetUser IObject
+			
+		local AType = AUIO.getType()--get the Asset's Type
+		local AFile = AUIO.getfilename()--get the Asset's File Name
+		if atype != #bitmap do
+		(
+			format"Type:% File:%\n"AType AFile--format the info
+		)
+	)
+)
+
+-----------------------------------------------------------------------------------------
+
 fn wipeBitmapTextures file:"" useFullPath:off =
 (
 	if useFullPath do file = pathConfig.mapPaths.getFullFilePath file
