@@ -21,19 +21,113 @@ global getDirectory = getDirectories (maxfilepath + "\*")
 --=======================================================================================
 --=======================================================================================
 
-fn getAsset =
+fn RemoveMissingDLL = 
 (
-	for i = 1 to AssetManager.GetNumAssets() do
-	(
+	-- get list of missing plugin classes
+	str = stringStream ""
 	
-		local AUIO = AssetManager.GetAssetByIndex i--get the AssetUser IObject
-			
-		local AType = AUIO.getType()--get the Asset's Type
-		local AFile = AUIO.getfilename()--get the Asset's File Name
-		if atype != #bitmap do
+	apropos "*missing*" to:str
+	seek str 0
+	cls = #()
+	
+	while not (eof str) do 
+	(
+		ln = readLine str
+		tk = filterString ln " "
+		if tk.count == 4 then 
 		(
-			format"Type:% File:%\n"AType AFile--format the info
+			clsName = tk[1]
+			try 
+			(
+				val = (execute clsName)
+				sc = superClassOf val
+				-- Alternative: check for .classID == #(-1,0)
+				if sc==MAXWrapper or sc==node or sc==material or sc==MAXWrapperNonRefTarg then
+				(
+					append cls val
+					format "%: %\n" c val
+				) 
+				else 
+				(
+					format "Skipping % (%)\n" val sc
+				)
+			) 
+			catch 
+			(
+				format "Cannot use % for searching missing plugins.\n" clsName
+			)
+			
+		) 
+		else 
+		(
+			format "Incorrect string found in missing plugin name list: %\n" tk
 		)
+	)
+	-- now search for instances of those missing plugins
+	c = 0
+	foundMissing = #()
+	
+	for j = 1 to cls.count do 
+	(
+		cc = cls[j]
+		ci = getClassInstances cc
+		if ci.count > 0 then 
+		(
+			format "%: Found % instances of %: %\n" j ci.count cc ci
+			for i = 1 to ci.count do 
+			(
+				-- get current class
+				myClass = classOf cc
+				append foundMissing myClass
+				-- get list of all subclasses
+				allClasses = myClass.classes
+				for k = 1 to allClasses.count do 
+				(
+					-- search for useful replacement
+					if allClasses[k].creatable then 
+					(
+						-- create new instance of default (first) class
+						newInst = createInstance allClasses[k]
+						try 
+						(
+							-- replace all instances (requires 3ds Max 2008+ or AVG extensions)
+							q = replaceInstances ci[i] newInst
+							c += 1
+							-- and exit for k loop
+							exit
+						) 
+						catch 
+						(
+							format "Error replacing %\n" ci[i]
+							format "Exception: %\n" (getCurrentException())
+						)
+					)
+				) -- end: for k
+				-- todo: what happens if NO useful replacement was found?
+			) -- end: for i
+		) -- end: if
+	) -- end: for j
+	
+	if c > 0 then 
+	(
+		-- produce summary message for user
+		str = "Replaced "
+		append str (c as string)
+		append str " missing plugin(s) with default objects:\n"
+		
+		for i in foundMissing do 
+		(
+			append str "\t"
+			append str (i as string)
+			append str "\n"
+		)
+		append str "\nUSE RESULT WITH CAUTION!\nSAVE TO A DIFFERENT FILE NAME!"
+		messageBox str title:"removeMissingPlugins v0.1" beep:true
+		print foundMissing
+	) 
+	else 
+	(
+		messageBox "No missing plugins found" title:"removeMissingPlugins v0.1"
 	)
 )
 
@@ -277,7 +371,8 @@ rollout MapPathSet "Map Path Set"
 	button btnFindPath "..." offset:[225,-55] width: 35
 	button btnSetPath "Set Path" offset:[300,-26] width: 100
 	button btnSameFilenameInMaxPath "Change Path" offset:[155,-194] width:70
-	button btnAboutScript "About" offset:[170,171]width: 140
+	button btnRemoveMissingDLL "Remove Missing DLL" offset:[170,171]width: 140
+	button btnAboutScript "About" offset:[300,-27] width: 100
 	
 	--------------------------------------------------------------------------------------
 	
@@ -306,6 +401,31 @@ rollout MapPathSet "Map Path Set"
 	
 	--------------------------------------------------------------------------------------
 	
+	on btnRemoveMissingDLL pressed do
+	(
+		 rollout rollRemoveMissingDLL "Remove Missing DLL"
+		(
+			label labelRemoveMissingDLL "Remove Missing DLL"
+			label AreYouSure "Are You Sure?"
+			button btnYes "Yes" offset:[-35,3] width: 50
+			button btnNo "No" offset:[30,-26.5] width: 50
+
+			on btnYes pressed do
+			(
+				RemoveMissingDLL()
+				destroydialog RemoveMissingDLL
+			)
+				
+			on btnNo pressed do
+			(
+				destroydialog rollRemoveMissingDLL
+			)
+		)
+		createdialog rollRemoveMissingDLL width: 200 height: 75
+		
+	)
+	
+	--------------------------------------------------------------------------------------
 	on btnSameFilenameInMaxPath pressed do
 	(
 		if IbPathXMapO.selection !=0 and ddlSameFilenameInMaxPath.items.count > 0 then
@@ -614,4 +734,4 @@ rollout MapPathSet "Map Path Set"
 	
 	 --------------------------------------------------------------------------------------
 )
-createdialog MapPathSet width: 750 height: 500
+createdialog MapPathSet width: 750 height: 480
